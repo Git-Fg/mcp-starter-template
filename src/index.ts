@@ -1,0 +1,27 @@
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { createServer } from './server.js';
+
+async function main() {
+    const server = createServer();
+    const transport = new StdioServerTransport();
+
+    await server.connect(transport);
+
+    // Connect stdio error logging properly
+    console.error('MCP Stdio Server running on stdio');
+
+    process.on('SIGINT', async () => {
+        await server.close();
+        process.exit(0);
+    });
+
+    process.on('SIGTERM', async () => {
+        await server.close();
+        process.exit(0);
+    });
+}
+
+main().catch((error) => {
+    console.error('Fatal error in main():', error);
+    process.exit(1);
+});

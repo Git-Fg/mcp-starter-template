@@ -1,0 +1,25 @@
+{
+    "name": "mcp-starter-template",
+    "version": "1.0.0",
+    "description": "A minimal, structured Model Context Protocol (MCP) server template in TypeScript",
+    "type": "module",
+    "bin": {
+        "mcp-starter-template": "./dist/index.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc -w & node --watch dist/index.js",
+        "start": "node dist/index.js",
+        "inspect": "npx @modelcontextprotocol/inspector --cli node dist/index.js",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.0",
+        "zod": "^3.23.8"
+    },
+    "devDependencies": {
+        "@types/node": "^20.12.7",
+        "typescript": "^5.4.5",
+        "vitest": "^4.0.18"
+    }
+}
