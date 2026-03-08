@@ -9,7 +9,9 @@ export function registerResources(server: McpServer) {
         'server-info',
         'info://server',
         {
-            description: 'Provide basic information about the server environment.'
+            title: 'Server Environment Info',
+            description: 'Provide basic information about the server environment.',
+            mimeType: 'application/json',
         },
         async (uri) => {
             const info = {
@@ -42,7 +44,9 @@ export function registerResources(server: McpServer) {
             })
         }),
         {
-            description: 'A dynamic greeting resource based on a name parameter.'
+            title: 'Dynamic Greeting',
+            description: 'A dynamic greeting resource based on a name parameter.',
+            mimeType: 'text/plain',
         },
         async (uri, { name }) => {
             const greeting = `Hello, ${name}! Welcome to the MCP Starter Template server.`;

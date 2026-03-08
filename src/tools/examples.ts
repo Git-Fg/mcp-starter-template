@@ -15,13 +15,18 @@ export function registerExampleTools(server: McpServer) {
     server.registerTool(
         'ping_host',
         {
+            title: 'Ping Host',
             description: `Check connectivity to a specific host.
 When to use:
 - Verifying if a service is reachable before attempting complex operations.
 - Troubleshooting network barriers.
 Returns: Connectivity status and latency.`,
+            annotations: {
+                readOnlyHint: true,
+                idempotentHint: true,
+            },
             inputSchema: {
-                host: z.string().describe('The hostname or IP address to ping.')
+                host: z.string().describe('The hostname or IP address to ping, for example google.com or 192.168.1.1.')
             }
         },
         async ({ host }) => {
@@ -40,13 +45,17 @@ Returns: Connectivity status and latency.`,
     server.registerTool(
         'extract_keywords',
         {
+            title: 'Extract Keywords',
             description: `Analyze text to find key technical terms.
 When to use:
 - Distilling complex content into searchable parameters.
 - Preparing metadata for search_knowledge_base.
 Returns: A JSON object containing extracted keywords and their count.`,
+            annotations: {
+                readOnlyHint: true,
+            },
             inputSchema: {
-                text: z.string().describe('The text to analyze.')
+                text: z.string().describe('The text to analyze, for example a paragraph from a documentation page.')
             }
         },
         async ({ text }) => {
@@ -64,13 +73,17 @@ Returns: A JSON object containing extracted keywords and their count.`,
     server.registerTool(
         'search_knowledge_base',
         {
+            title: 'Search Knowledge Base',
             description: `Search the internal docs using keywords.
 When to use:
 - Retrieving specific documentation after focused keywords are identified.
 - Best used after extract_keywords has provided a focused list of terms.
 Returns: A list of relevant article titles.`,
+            annotations: {
+                readOnlyHint: true,
+            },
             inputSchema: {
-                query: z.array(z.string()).describe('List of keywords to search for.')
+                query: z.array(z.string()).describe('List of keywords to search for, for example ["MCP", "tools", "registration"].')
             }
         },
         async ({ query }) => {
@@ -92,11 +105,16 @@ Returns: A list of relevant article titles.`,
     server.registerTool(
         'toggle_workspace_lock',
         {
+            title: 'Toggle Workspace Lock',
             description: `Lock or unlock the shared workspace.
 When to use:
 - Preventing conflicting changes during complex write operations.
 - Coordinating access between multiple sub-tasks or agents.
 Returns: The current lock status of the workspace.`,
+            annotations: {
+                destructiveHint: true,
+                idempotentHint: true,
+            },
             inputSchema: {
                 lock: z.boolean().describe('True to lock, false to release.')
             }

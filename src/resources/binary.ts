@@ -10,7 +10,9 @@ export function registerBinaryResources(server: McpServer) {
         'sample-image',
         'images://sample',
         {
-            description: 'A sample binary resource returning a base64 encoded image.'
+            title: 'Sample Image',
+            description: 'A sample binary resource returning a base64 encoded image.',
+            mimeType: 'image/png',
         },
         async (uri) => {
             // A simple 1x1 transparent blue pixel as base64

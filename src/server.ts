@@ -22,6 +22,7 @@ export function createServer(): McpServer {
             capabilities: {
                 logging: {},
             },
+            instructions: 'A 2026 reference MCP server template. Provides tools for echo, URL fetching, research, long-running tasks, and dynamic tool management. Prioritize tools over resources or prompts.',
         }
     );
 

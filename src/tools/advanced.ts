@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { CreateMessageRequestSchema, CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
+import { CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as z from 'zod';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,20 +31,38 @@ function savePersistedState(state: { secretToolEnabled: boolean }) {
  * Registers advanced tool examples demonstrating orchestration and high-level patterns.
  * Demonstrates:
  * 1. Sampling (requesting the client LLM to generate content) with fallback logic.
- * 2. Logging (sending structured logs to the client).
+ * 2. Standard Long-Running Tool (async with cancellation).
  * 3. Dynamic Tool Management (enabling/disabling tools at runtime).
  */
 export function registerAdvancedTools(server: McpServer) {
-    // 1. Sampling Tool with Fallback
+    // 1. Sampling Tool with Fallback & Cancellation
     server.registerTool(
         'research_and_summarize',
         {
-            description: 'Research a topic and provide a summary using the client LLM (sampling).',
+            title: 'Research & Summarize',
+            description: `Research a topic and provide a summary using the client LLM (sampling).
+When to use:
+- Generating synthesized overviews of complex subjects.
+- Outsourcing high-level reasoning to the client.
+IMPORTANT: Requires client sampling support. Falls back to a status message if unavailable.
+Returns: A summarized text response.`,
+            annotations: {
+                readOnlyHint: true,
+                openWorldHint: true,
+            },
             inputSchema: {
-                topic: z.string().describe('The topic to research and summarize'),
+                topic: z.string().describe('The topic to research and summarize, for example "WebSocket protocol design patterns".'),
             },
         },
         async ({ topic }, ctx) => {
+            // Demonstrate usage of cancellation signal
+            if (ctx.signal.aborted) {
+                return {
+                    content: [{ type: 'text', text: 'Task was cancelled before it started.' }],
+                    isError: true,
+                };
+            }
+
             try {
                 const result = await ctx.sendRequest(
                     {
@@ -54,18 +72,24 @@ export function registerAdvancedTools(server: McpServer) {
                             maxTokens: 100,
                         },
                     },
-                    CreateMessageResultSchema
+                    CreateMessageResultSchema,
+                    { signal: ctx.signal } // Pass the cancellation signal to the request
                 );
 
                 const summaryText = result.content.type === 'text' ? result.content.text : 'No text content.';
                 return {
                     content: [{ type: 'text', text: `[Sampling Result] Summary of ${topic}:\n\n${summaryText}` }],
                 };
-            } catch (error: any) {
-                await server.sendLoggingMessage({
+            } catch (error: unknown) {
+                // If cancelled, return early
+                if (error instanceof Error && error.name === 'AbortError') {
+                    return { content: [{ type: 'text', text: 'Research was cancelled.' }] };
+                }
+
+                await server.server.sendLoggingMessage({
                     level: 'warning',
                     logger: 'advanced-tools',
-                    data: `Sampling failed: ${error.message}. Using fallback.`
+                    data: `Sampling failed: ${error instanceof Error ? error.message : String(error)}. Using fallback.`
                 });
                 return {
                     content: [{ type: 'text', text: `[Fallback Result] Summary of ${topic}:\n\nSampling is unsupported by this client.` }],
@@ -74,26 +98,48 @@ export function registerAdvancedTools(server: McpServer) {
         }
     );
 
-    // 2. Logging/Status Tool
+    // 2. Standard Long-Running Tool
+    // Demonstrates standard async execution with cancellation support.
     server.registerTool(
         'long_running_task',
         {
-            description: 'A simulated long-running task that reports progress via logging.',
+            title: 'Long Running Task',
+            description: `A standard async tool that simulates a long-running process.
+When to use:
+- Operations that take several seconds to complete.
+- Testing client-side timeouts and cancellation.
+Returns: A success message after all steps complete.`,
+            annotations: {
+                readOnlyHint: true,
+                idempotentHint: true,
+            },
             inputSchema: {
-                steps: z.number().default(5).describe('Number of steps to simulate'),
+                steps: z.number().int().min(1).max(20).default(5)
+                    .describe('Number of steps to simulate.'),
             },
         },
-        async ({ steps }) => {
+        async ({ steps }, ctx) => {
             for (let i = 1; i <= steps; i++) {
-                await server.sendLoggingMessage({
+                // Check if user cancelled the request
+                if (ctx.signal.aborted) {
+                    return {
+                        content: [{ type: 'text', text: `Task cancelled at step ${i}.` }],
+                        isError: true
+                    };
+                }
+
+                await server.server.sendLoggingMessage({
                     level: 'info',
                     logger: 'advanced-tools',
                     data: `Processing step ${i} of ${steps}...`
                 });
+
+                // Simulate work
                 await new Promise((resolve) => setTimeout(resolve, 500));
             }
+
             return {
-                content: [{ type: 'text', text: `Successfully completed ${steps} steps.` }],
+                content: [{ type: 'text', text: `Successfully completed ${steps} steps.` }]
             };
         }
     );
@@ -122,13 +168,18 @@ export function registerAdvancedTools(server: McpServer) {
     server.registerTool(
         'toggle_secret_tool',
         {
+            title: 'Toggle Secret Tool',
             description: `Enables or disables the "secret_access" tool.
 When to use:
 - Managing access to restricted capabilities at runtime.
 - Demonstrating dynamic tool registration and visibility.
 Returns: A status message confirming the change.`,
+            annotations: {
+                destructiveHint: true,
+                idempotentHint: true,
+            },
             inputSchema: {
-                enabled: z.boolean().describe('Whether to enable the tool'),
+                enabled: z.boolean().describe('Whether to enable the tool.'),
             }
         },
         async ({ enabled }) => {
@@ -142,7 +193,7 @@ Returns: A status message confirming the change.`,
             savePersistedState({ secretToolEnabled: enabled });
 
             // Notify client that tool list has changed
-            server.sendToolListChanged();
+            server.server.sendToolListChanged();
 
             return {
                 content: [{ type: 'text', text: `Tool "secret_access" is now ${enabled ? 'ENABLED' : 'DISABLED'}.` }]

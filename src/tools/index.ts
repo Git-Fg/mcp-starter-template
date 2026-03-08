@@ -8,11 +8,16 @@ export function registerTools(server: McpServer) {
     server.registerTool(
         'echo',
         {
+            title: 'Echo Message',
             description: `Echo back a message with optional transformation.
 When to use:
 - Simple connectivity testing between the agent and server.
 - Verifying the status of the transformation logic.
 Returns: The processed message string.`,
+            annotations: {
+                readOnlyHint: true,
+                idempotentHint: true,
+            },
             inputSchema: {
                 message: z.string().describe('The message to echo back to the user.'),
                 transform: z
@@ -45,15 +50,21 @@ Returns: The processed message string.`,
     server.registerTool(
         'fetch_url',
         {
+            title: 'Fetch URL Content',
             description: `Fetch the text content of a URL (safe HTTP GET).
 When to use:
 - Accessing documentation or public web content.
 - Scraping text for analysis or summarization.
 Returns: The raw text content, truncated if it exceeds maxLength.`,
+            annotations: {
+                readOnlyHint: true,
+                openWorldHint: true,
+            },
             inputSchema: {
-                url: z.string().url().describe('The URL of the webpage or API to fetch.'),
+                url: z.string().url().describe('The URL of the webpage or API to fetch, for example "https://docs.example.com/api".'),
                 maxLength: z
                     .number()
+                    .int()
                     .min(100)
                     .max(10000)
                     .optional()

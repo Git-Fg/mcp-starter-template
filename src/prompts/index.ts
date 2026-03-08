@@ -7,6 +7,7 @@ export function registerPrompts(server: McpServer) {
     server.registerPrompt(
         'architecture-consultant',
         {
+            title: 'Architecture Consultant',
             description: 'Get architectural advice from a senior software consultant.',
             argsSchema: {
                 projectDescription: z.string().describe('The project or system you need advice on.'),
@@ -36,6 +37,7 @@ export function registerPrompts(server: McpServer) {
     server.registerPrompt(
         'code-stylist',
         {
+            title: 'Code Stylist',
             description: 'Refactor code to follow clean, modern 2026 conventions.',
             argsSchema: {
                 code: z.string().describe('The code to restyle.'),
@@ -74,6 +76,7 @@ export function registerPrompts(server: McpServer) {
     server.registerPrompt(
         'logical-reasoner',
         {
+            title: 'Logical Reasoner',
             description: 'Solve complex logical problems using step-by-step reasoning.',
             argsSchema: {
                 problem: z.string().describe('The logical problem to solve.'),
@@ -102,6 +105,7 @@ export function registerPrompts(server: McpServer) {
     server.registerPrompt(
         'simple-summary',
         {
+            title: 'Simple Summary',
             description: 'A basic prompt for summarizing text.',
             argsSchema: {
                 text: z.string().describe('Text to summarize.'),

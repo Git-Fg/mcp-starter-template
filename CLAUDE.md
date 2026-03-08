@@ -3,86 +3,128 @@
 This document provides instructions for AI agents working on this codebase.
 
 ## Project Vision
-A minimal, highly structured, and modular MCP server template designed for developer reuse. It prioritizes the `stdio` transport as the primary communication mechanism for tools like Claude Desktop and Cursor.
+A minimal, highly structured, and modular MCP server template in TypeScript.
+
+**Dual Role**:
+1. **Editable Boilerplate**: Fork or clone this to scaffold new MCP servers rapidly.
+2. **Reference Library**: Keep this template alongside your other MCP servers. It serves as a 2026 "Gold Standard" that agents can read anytime they need to build, edit, or improve an MCP server's tool orchestration and metadata.
+
+## Mandatory Reading
+
+> Before creating or modifying **any** tool, you **MUST** read and internalize [Tool Description Prompt Engineering](./docs/descriptions_prompt_engineering.md). It contains the canonical examples, patterns, and rules for 2026-grade tool metadata.
 
 ## Architecture Guidelines (Agent-First & Tools-First)
-In 2026, **Autonomous AI Agents** are the primary users of MCP. For optimal integration, follow these "Agent-First" principles:
+In 2026, **Autonomous AI Agents** are the primary consumers of MCP. Follow these principles:
 
-- **Tools-First Strategy**: Focus on creating simple, efficient, and robust **Tools**. Tools are the most reliable primitive for agentic workflows.
-- **Discouraged Primitives**: In 99% of cases, **Resources**, **Prompts**, and **Sampling** should be considered legacy or specialized edge cases. They add significant complexity for both developers and agents without offering proportional benefits in an autonomous context.
-- **Long-Running Processes**: Use tools together with **Progress Logging** (`server.sendLoggingMessage`) for any tasks that take time. This keeps the agent informed without protocol friction.
-- **Transport & Registration**: Exclusively `stdio`. Use the modern `registerTool` (and similar) config-based registration for strict typing and runtime flexibility.
+- **Tools-First Strategy**: Focus on creating simple, efficient, and robust **Tools**. They are the most reliable primitive for agentic workflows.
+- **Discouraged Primitives**: In 99% of cases, **Resources**, **Prompts**, and **Sampling** should be considered legacy or specialized edge cases.
+- **Long-Running Processes**: Use tools with **Progress Logging** (`server.sendLoggingMessage`) for tasks that take time.
+- **Transport & Registration**: Exclusively `stdio`. Use `registerTool` config-based registration for strict typing and runtime flexibility.
 - **Sampling Fallbacks**: If sampling is absolutely necessary, **mandate** a manual tool fallback. Never assume client support.
 
-## Advanced Pattern: Dynamic Tool Registration
-In 2026, **Dynamic Registration** is the single most efficient way to leverage MCP servers. While it introduces implementation complexity, its benefits for autonomous orchestration are critical:
+## SDK v1.27.1 Native Features — Use Them, Don't Reinvent Them
+The SDK provides first-class support for metadata that agents use to reason about tools. **Always** use these over custom approximations:
 
-- **Context Rot Prevention**: By enabling/disabling tools based on current session state, you prevent "context rot" caused by exposing too many irrelevant tools to the agent's limited tool-call window.
-- **Precision Orchestration**: Pushing the "right tool at the right time" (e.g., enabling specialized analysis tools only after a data retrieval step) dramatically improves agent reliability and reduces token waste.
-- **Implementation**: Use the `RegisteredTool` object returned by `registerTool` to `enable()` or `disable()` capabilities at runtime. Always trigger `server.sendToolListChanged()` to notify the client of the update.
+| Feature | Where | Purpose |
+|---|---|---|
+| `title` | `registerTool`, `registerPrompt`, `registerResource` | Human-readable display name. Distinct from the programmatic `name`. |
+| `annotations` | `registerTool` config | Behavioral hints: `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`. Agents use these to assess risk and cacheability. |
+| `outputSchema` | `registerTool` config | Zod schema for structured output validation. Use when returning typed data. |
+| `_meta` | Config object | Arbitrary vendor-specific metadata. |
+| `.enable()` / `.disable()` | `RegisteredTool`, `RegisteredResource`, `RegisteredPrompt` | Toggle visibility at runtime. Call `server.sendToolListChanged()` after. |
+| `.update()` | All registered objects | Modify name, description, schema, or callback after registration. |
+| `.remove()` | All registered objects | Permanently unregister the primitive. |
+
+**Every tool MUST have**: `title`, `description`, `annotations`, and fully `.describe()`'d `inputSchema`.
+
+## Dynamic Tool Registration
+**Dynamic Registration** is the single most efficient way to leverage MCP servers in 2026:
+
+- **Context Rot Prevention**: Enable/disable tools based on session state to prevent irrelevant tools from polluting the agent's context.
+- **Precision Orchestration**: Push the "right tool at the right time" (e.g., enable analysis tools only after data retrieval).
+- **Implementation**: Use `RegisteredTool.enable()` / `.disable()` at runtime. Always call `server.sendToolListChanged()` to notify the client.
 
 ## Graduated Complexity: Tool Orchestration Levels
-Always aim for the lowest complexity that achieves the objective. Use the `src/tools/examples.ts` as a blueprint for these levels:
+Always aim for the lowest complexity that achieves the objective. See `src/tools/examples.ts` for blueprints:
 
-1. **Level 1: Atomic (Connectivity/Utility)**: Single-purpose tools like `ping_host`. High reliability, no state.
-2. **Level 2: Sequential (Data Pipelines)**: Tools like `extract_keywords` designed to pipe into `search_knowledge_base`. Use descriptions to explicitly guide the agent on the dependency chain.
-3. **Level 3: State-Aware (Environment Management)**: Tools like `toggle_workspace_lock` that manage the agent's operating environment.
-
-### Cognitive-Friendly Descriptions
-In 2026, the quality of a tool is measured by its **Description**.
-- **Hinting**: Use the description to "hint" at follow-up tools (e.g., "After extracting keywords, use search_knowledge_base").
-- **Schema Mapping**: Ensure parameter names match the agent's "mental model" of the domain to minimize mapping errors.
+1. **Level 1: Atomic** — Single-purpose tools like `ping_host`. High reliability, no state.
+2. **Level 2: Sequential** — Tools like `extract_keywords` designed to pipe into `search_knowledge_base`. Use descriptions to guide the dependency chain.
+3. **Level 3: State-Aware** — Tools like `toggle_workspace_lock` that manage the agent's operating environment.
 
 ## Quick Start for New Servers
-When creating a new server based on this template:
-1. **Prune Primitives**: If Resources, Prompts, or Sampling aren't required for your specific use case, **delete them immediately**.
-   - Remove folders: `src/resources/`, `src/prompts/`.
+
+1. **Prune Primitives**: If Resources, Prompts, or Sampling aren't needed, **delete them immediately**.
+   - Remove: `src/resources/`, `src/prompts/`.
    - Cleanup `src/server.ts` imports and registration calls.
-   - Simplified code is easier for AI agents to understand and maintain.
 2. **Focus on Tools**: Add your logic to `src/tools/`.
-3. **Minimalist Architecture**: Never bloat the agent's context. Prefer a small set of high-impact, versatile tools over a large library of niche ones.
-4. **Agentic Trust**: Trust that modern agents (2026+) are smart enough to choose the right tool based on high-quality metadata. Use "Golden Path" mental models when designing tool sequences.
-5. **Tool Descriptions**: Optimized for autonomous agent discovery. Every tool must have a "When to use" and "Returns" section.
+3. **Minimalist Architecture**: Prefer a small set of high-impact, versatile tools over a large library of niche ones.
+4. **Agentic Trust**: Trust that modern agents are smart enough to choose the right tool from high-quality metadata. Design "Golden Path" tool sequences (Discovery → Analysis → Action).
 
-### Crafting Tool Descriptions (Orchestration-Ready)
-Autonomous agents rely entirely on descriptions to know **when** and **how** to use a tool.
-- **Intent-Driven**: Start with a clear verb (e.g., "Analyze", "Calculate", "Retrieve").
-- **Constraint-Rich**: Explicitly state what the tool *cannot* do or any edge cases it handles.
-- **Output Expectations**: Describe what the results will look like so the agent can plan follow-up steps.
-- **Internal Chain-of-Thought**: For complex tools, include a brief "thinking" guide in the description to help the agent understand the underlying logic.
+## Crafting Tool Descriptions
 
-For detailed patterns and official examples, see [Tool Description Prompt Engineering](./docs/descriptions_prompt_engineering.md).
-- **Testing Strategy**: For every new Tool, Resource, or Prompt added, an AI agent **MUST** adapt and expand the existing test suite in `tests/integration/cli.test.ts`. 
-  - Tests rely on the `@modelcontextprotocol/inspector --cli` for "black-box" verification of the protocol.
-  - Ensure `pnpm build` is run before `pnpm test` to verify the latest compiled code.
+Autonomous agents rely entirely on descriptions to know **when** and **how** to use a tool. The main description and Zod argument descriptions form a **unified interface** — they must be complementary, never redundant.
 
-The MCP Inspector CLI is the primary tool for testing your server without needing a full-scale client like Claude Desktop.
+**Main Description** (the `description` field):
+- Start with a clear intent verb (e.g., "Analyze", "Retrieve", "Toggle").
+- Include "When to use" heuristics and "Returns" expectations.
+- Add natural-language examples (e.g., "For example, if you need to check a service before calling it...").
+- State constraints — what the tool *cannot* do.
+- Hint at orchestration follow-ups (e.g., "After extracting keywords, use `search_knowledge_base`").
 
-### Basic Testing
-Run the local build through the inspector:
-```bash
-npx @modelcontextprotocol/inspector --cli node dist/index.js
+**Argument Descriptions** (Zod `.describe()`):
+- **ALWAYS** include `.describe()` on every parameter — no exceptions.
+- Include natural-language examples inline (e.g., `'The hostname to ping, for example google.com'`).
+
+### Zod Schema Design: The Other Steering Mechanism
+The Zod schema is not just validation — it is a **primary behavior-steering mechanism** alongside the tool description. An optimally constrained schema drastically reduces agent errors and hallucinated arguments.
+
+**Rules**:
+- **Always `.describe()`**: Every single parameter must have a `.describe()` with clear intent and a natural-language example.
+- **Enum over String**: If there are a known set of valid values, **always** use `z.enum()` instead of `z.string()`. This eliminates guesswork entirely.
+- **Constrain Numerics**: Always use `.min()`, `.max()`, `.int()`, `.positive()` etc. to define valid ranges.
+- **Defaults**: Use `.default()` generously. Agents should be able to call a tool with minimal arguments and get reasonable behavior.
+- **Optional with Intent**: Use `.optional()` for truly optional parameters, but combine with `.describe()` to explain when to use it.
+- **Output Types**: Prefer `.url()`, `.email()`, `.uuid()` etc. over raw `z.string()` when the format is known.
+
+```typescript
+// ❌ BAD: vague, unconstrained, no descriptions
+inputSchema: {
+    query: z.string(),
+    count: z.number(),
+    format: z.string(),
+}
+
+// ✅ GOOD: constrained, described, agent-friendly
+inputSchema: {
+    query: z.string().describe('The search query, for example "react hooks best practices"'),
+    count: z.number().int().min(1).max(50).default(10)
+        .describe('Number of results to return.'),
+    format: z.enum(['json', 'markdown', 'plain']).default('json')
+        .describe('Output format. Use markdown when results will be shown to the user.'),
+}
 ```
 
-### Advanced Usage Examples
+**Anti-Instruction-Drift**: **NEVER** provide JSON samples or literal code snippets in the main description. Trust the Zod schema for the *how*; use descriptions for the *why* and *when*.
 
-#### List Capabilities
+> For detailed patterns and official examples, see [Tool Description Prompt Engineering](./docs/descriptions_prompt_engineering.md).
+
+## Testing
+
+For every new capability, adapt `tests/integration/cli.test.ts`. Tests use the MCP Inspector CLI for black-box protocol validation.
+
 ```bash
-# List available tools
+# Build before testing
+pnpm run build
+
+# Run tests
+pnpm test
+
+# Manual inspection
+npx @modelcontextprotocol/inspector --cli node dist/index.js
+
+# List capabilities
 npx @modelcontextprotocol/inspector --cli node dist/index.js --method tools/list
 
-# List available resources
-npx @modelcontextprotocol/inspector --cli node dist/index.js --method resources/list
-
-# List available prompts
-npx @modelcontextprotocol/inspector --cli node dist/index.js --method prompts/list
-```
-
-#### Call Primitives
-```bash
-# Call a specific tool
+# Call a tool
 npx @modelcontextprotocol/inspector --cli node dist/index.js --method tools/call --tool-name echo --tool-arg message="Hello World"
-
-# Call a tool with JSON arguments
-npx @modelcontextprotocol/inspector --cli node dist/index.js --method tools/call --tool-name echo --tool-arg '{"message": "Hello", "transform": "uppercase"}'
 ```
