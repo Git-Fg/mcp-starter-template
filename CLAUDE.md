@@ -40,7 +40,9 @@ When creating a new server based on this template:
    - Cleanup `src/server.ts` imports and registration calls.
    - Simplified code is easier for AI agents to understand and maintain.
 2. **Focus on Tools**: Add your logic to `src/tools/`.
-3. **Craft Optimal Descriptions**: This is the most critical step for autonomous orchestration.
+3. **Minimalist Architecture**: Never bloat the agent's context. Prefer a small set of high-impact, versatile tools over a large library of niche ones.
+4. **Agentic Trust**: Trust that modern agents (2026+) are smart enough to choose the right tool based on high-quality metadata. Use "Golden Path" mental models when designing tool sequences.
+5. **Tool Descriptions**: Optimized for autonomous agent discovery. Every tool must have a "When to use" and "Returns" section.
 
 ### Crafting Tool Descriptions (Orchestration-Ready)
 Autonomous agents rely entirely on descriptions to know **when** and **how** to use a tool.

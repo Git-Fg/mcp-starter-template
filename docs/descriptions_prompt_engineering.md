@@ -100,9 +100,34 @@ Retrieves up-to-date documentation and code examples for any library. This tool 
 
 ---
 
-## 2026 Best Practices for This Template
+## 4. Agentic Flow & Minimalist Architecture
 
-- **Intent-Driven Verbs**: Use "Analyze", "Retrieve", "Toggle", "Synchronize".
-- **Constraint-Rich Metadata**: Tell the agent what the tool *won't* do (e.g., "searches local files only").
-- **Orchestration Handoffs**: Explicitly mention if the output is optimized for another tool (e.g., "Output is ready for `summarize_text`").
-- **Error Guidance**: Tell the agent how to fix a bad call (e.g., "If no results, try broadening the `search_radius`").
+In 2026, the most effective MCP servers are those that **trust the agent**. Over-engineering your toolset leads to "Context Bloat," which increases latency and reduces an agent's reasoning precision.
+
+### Principle A: Stop the Context Bloat
+- **Minimize the Toolset**: Prefer 5 high-impact, versatile tools over 25 niche ones. 
+- **High-Trust Design**: Assume the agent is smart. Don't build "guardrail" tools that only exist to validate other tools. 
+- **Intent > Primitives**: Define tools based on what the agent *wants to accomplish*, not just raw API endpoints.
+
+### Principle B: The "Golden Path" Mental Model
+When designing a suite, visualize the **Golden Path**—the most natural and efficient sequence of calls an agent would take.
+1. **Discovery**: A broad tool to understand the environment (e.g., `list_files`).
+2. **Analysis**: A tool to dive deep into a specific item (e.g., `read_file_content`).
+3. **Action**: A tool to commit the change (e.g., `write_to_file`).
+
+If your Golden Path requires more than 3-4 steps for a common use case, your primitives are likely too granular.
+
+### Principle C: Leveraging Dynamic Registration
+Dynamic tool registration (`server.sendToolListChanged()`) is your surgical instrument to fight bloat.
+- **Contextual Visibility**: Only expose "Write" tools after a "Read" tool has confirmed the target exists.
+- **Tiered Access**: Hide advanced/risky tools until the agent has "unlocked" the session context.
+- **Trust Factor**: If there is any doubt about whether a tool should be visible, **prefer trusting the agent** to choose the right one from the full set. Dynamic registration should help, not hinder.
+
+---
+
+## 2026 Best Practices Recap
+
+- **Minimalism Wins**: A lean context is a fast, accurate context.
+- **Trust the Agent**: Build for high-intelligence autonomous agents.
+- **Intent-Driven Metadata**: Use descriptions to hint at the Golden Path and expected orchestration.
+- **Dynamic Optimization**: Use runtime registration to prune irrelevant tools.
