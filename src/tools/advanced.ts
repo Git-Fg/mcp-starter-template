@@ -50,9 +50,9 @@ Returns: A summarized text response.`,
                 readOnlyHint: true,
                 openWorldHint: true,
             },
-            inputSchema: {
+            inputSchema: z.object({
                 topic: z.string().describe('The topic to research and summarize, for example "WebSocket protocol design patterns".'),
-            },
+            }),
         },
         async ({ topic }, ctx) => {
             // Demonstrate usage of cancellation signal
@@ -73,7 +73,7 @@ Returns: A summarized text response.`,
                         },
                     },
                     CreateMessageResultSchema,
-                    { signal: ctx.signal } // Pass the cancellation signal to the request
+                    { signal: ctx.signal }
                 );
 
                 const summaryText = result.content.type === 'text' ? result.content.text : 'No text content.';
@@ -99,7 +99,6 @@ Returns: A summarized text response.`,
     );
 
     // 2. Standard Long-Running Tool
-    // Demonstrates standard async execution with cancellation support.
     server.registerTool(
         'long_running_task',
         {
@@ -113,10 +112,10 @@ Returns: A success message after all steps complete.`,
                 readOnlyHint: true,
                 idempotentHint: true,
             },
-            inputSchema: {
+            inputSchema: z.object({
                 steps: z.number().int().min(1).max(20).default(5)
                     .describe('Number of steps to simulate.'),
-            },
+            }),
         },
         async ({ steps }, ctx) => {
             for (let i = 1; i <= steps; i++) {
@@ -178,9 +177,9 @@ Returns: A status message confirming the change.`,
                 destructiveHint: true,
                 idempotentHint: true,
             },
-            inputSchema: {
+            inputSchema: z.object({
                 enabled: z.boolean().describe('Whether to enable the tool.'),
-            }
+            })
         },
         async ({ enabled }) => {
             if (enabled) {

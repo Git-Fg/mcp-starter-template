@@ -1,4 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { Implementation } from '@modelcontextprotocol/sdk/types.js';
+import { ServerOptions } from '@modelcontextprotocol/sdk/server/index.js';
 import { registerPrompts } from './prompts/index.js';
 import { registerResources } from './resources/index.js';
 import { registerTools } from './tools/index.js';
@@ -17,13 +19,13 @@ export function createServer(): McpServer {
         {
             name: 'mcp-starter-template',
             version: '1.0.0',
-        },
+        } satisfies Implementation,
         {
             capabilities: {
                 logging: {},
             },
             instructions: 'A 2026 reference MCP server template. Provides tools for echo, URL fetching, research, long-running tasks, and dynamic tool management. Prioritize tools over resources or prompts.',
-        }
+        } satisfies ServerOptions
     );
 
     // Register all primitives

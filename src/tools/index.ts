@@ -4,7 +4,6 @@ import { registerAdvancedTools } from './advanced.js';
 
 export function registerTools(server: McpServer) {
     // 1. Simple Synchronous Tool: Echo
-    // Using registerTool for better type safety and configuration
     server.registerTool(
         'echo',
         {
@@ -13,19 +12,20 @@ export function registerTools(server: McpServer) {
 When to use:
 - Simple connectivity testing between the agent and server.
 - Verifying the status of the transformation logic.
+- For example, if you need to confirm the server is responsive before running complex tasks.
 Returns: The processed message string.`,
             annotations: {
                 readOnlyHint: true,
                 idempotentHint: true,
             },
-            inputSchema: {
-                message: z.string().describe('The message to echo back to the user.'),
+            inputSchema: z.object({
+                message: z.string().describe('The message to echo back to the user, for example "Hello MCP".'),
                 transform: z
                     .enum(['uppercase', 'lowercase', 'none'])
                     .optional()
                     .default('none')
                     .describe('Optional transformation to apply to the message.'),
-            },
+            }),
         },
         async ({ message, transform }) => {
             let finalMessage = message;
@@ -55,12 +55,13 @@ Returns: The processed message string.`,
 When to use:
 - Accessing documentation or public web content.
 - Scraping text for analysis or summarization.
+- For example, if the user provides a link to a documentation page and asks for a summary.
 Returns: The raw text content, truncated if it exceeds maxLength.`,
             annotations: {
                 readOnlyHint: true,
                 openWorldHint: true,
             },
-            inputSchema: {
+            inputSchema: z.object({
                 url: z.string().url().describe('The URL of the webpage or API to fetch, for example "https://docs.example.com/api".'),
                 maxLength: z
                     .number()
@@ -70,7 +71,7 @@ Returns: The raw text content, truncated if it exceeds maxLength.`,
                     .optional()
                     .default(2000)
                     .describe('Maximum number of characters to return from the response.'),
-            }
+            }),
         },
         async ({ url, maxLength }) => {
             try {

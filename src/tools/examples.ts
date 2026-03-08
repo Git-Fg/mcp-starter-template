@@ -20,14 +20,15 @@ export function registerExampleTools(server: McpServer) {
 When to use:
 - Verifying if a service is reachable before attempting complex operations.
 - Troubleshooting network barriers.
+- For example, use this to verify a database host is up before running a migration.
 Returns: Connectivity status and latency.`,
             annotations: {
                 readOnlyHint: true,
                 idempotentHint: true,
             },
-            inputSchema: {
-                host: z.string().describe('The hostname or IP address to ping, for example google.com or 192.168.1.1.')
-            }
+            inputSchema: z.object({
+                host: z.string().describe('The hostname or IP address to ping, for example "google.com" or "192.168.1.1".')
+            }),
         },
         async ({ host }) => {
             // Logic would go here. Returning mock for template purposes.
@@ -50,13 +51,14 @@ Returns: Connectivity status and latency.`,
 When to use:
 - Distilling complex content into searchable parameters.
 - Preparing metadata for search_knowledge_base.
+- For example, use this to extract "React", "Hooks", and "Vite" from a project README.
 Returns: A JSON object containing extracted keywords and their count.`,
             annotations: {
                 readOnlyHint: true,
             },
-            inputSchema: {
+            inputSchema: z.object({
                 text: z.string().describe('The text to analyze, for example a paragraph from a documentation page.')
-            }
+            }),
         },
         async ({ text }) => {
             // Mock logic: extract words starting with capitals or technical patterns
@@ -78,13 +80,14 @@ Returns: A JSON object containing extracted keywords and their count.`,
 When to use:
 - Retrieving specific documentation after focused keywords are identified.
 - Best used after extract_keywords has provided a focused list of terms.
+- For example, search for ["Authentication", "JWT"] after extracting those terms from a user query.
 Returns: A list of relevant article titles.`,
             annotations: {
                 readOnlyHint: true,
             },
-            inputSchema: {
+            inputSchema: z.object({
                 query: z.array(z.string()).describe('List of keywords to search for, for example ["MCP", "tools", "registration"].')
-            }
+            }),
         },
         async ({ query }) => {
             return {
@@ -102,6 +105,7 @@ Returns: A list of relevant article titles.`,
      * Optimal for: Complex environments with shared resources.
      */
     let isResourceLocked = false;
+
     server.registerTool(
         'toggle_workspace_lock',
         {
@@ -110,14 +114,15 @@ Returns: A list of relevant article titles.`,
 When to use:
 - Preventing conflicting changes during complex write operations.
 - Coordinating access between multiple sub-tasks or agents.
+- For example, lock the workspace before performing a multi-file refactor to ensure consistency.
 Returns: The current lock status of the workspace.`,
             annotations: {
                 destructiveHint: true,
                 idempotentHint: true,
             },
-            inputSchema: {
+            inputSchema: z.object({
                 lock: z.boolean().describe('True to lock, false to release.')
-            }
+            }),
         },
         async ({ lock }) => {
             isResourceLocked = lock;
