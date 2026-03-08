@@ -26,6 +26,9 @@ Returns: The processed message string.`,
                     .default('none')
                     .describe('Optional transformation to apply to the message.'),
             }),
+            outputSchema: {
+                message: z.string().describe('The processed message string.')
+            }
         },
         async ({ message, transform }) => {
             let finalMessage = message;
@@ -42,6 +45,9 @@ Returns: The processed message string.`,
                         text: finalMessage,
                     },
                 ],
+                structuredContent: {
+                    message: finalMessage
+                }
             };
         }
     );

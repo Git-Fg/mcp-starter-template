@@ -59,9 +59,9 @@ inputSchema: z.object({
     format: z.enum(['json', 'markdown', 'plain']).default('json')
         .describe('Output format. Use markdown when results will be shown to the user.'),
 }),
-outputSchema: z.object({
+outputSchema: {
     results: z.array(z.string()).describe('List of search result titles.')
-})
+}
 ```
 
 **Why it matters**: The Zod schema is serialized into JSON Schema and sent to the agent alongside the description. A `z.enum()` tells the agent exactly what's valid. A `z.number().min(1).max(50)` prevents out-of-range values before they happen. Together with `.describe()`, the schema becomes a self-documenting, self-validating contract.

@@ -66,8 +66,11 @@ server.registerTool(
 When to use:
 - When the agent needs to accomplish X after discovering Y.
 Returns: A confirmation message with the result.`,
-        inputSchema: {
+        inputSchema: z.object({
             target: z.string().describe('The resource identifier, for example "project-alpha" or "user/repo".')
+        }),
+        outputSchema: {
+            status: z.string().describe('The result of the action, for example "Success".')
         }
     },
     async ({ target }) => { ... }

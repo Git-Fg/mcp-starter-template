@@ -79,6 +79,15 @@ Autonomous agents rely entirely on descriptions to know **when** and **how** to 
 ### Zod Schema Design: The Other Steering Mechanism
 The Zod schema is not just validation — it is a **primary behavior-steering mechanism** alongside the tool description. An optimally constrained schema drastically reduces agent errors and hallucinated arguments.
 
+**Schema Type Requirements (TS SDK v1.27.1)**:
+The SDK has specific type expectations for different primitives. Mixing these will cause TypeScript compilation errors.
+
+| Primitive | Field | Requirement | Reason |
+|---|---|---|---|
+| **Tools** | `inputSchema` | `z.object({...})` | Required for argument validation and handler type inference. |
+| **Tools** | `outputSchema` | `{...}` (Raw Shape) | SDK expects a raw shape to wrap the structured output. |
+| **Prompts** | `argsSchema` | `{...}` (Raw Shape) | SDK expects a raw shape to wrap the prompt arguments. |
+
 **Rules**:
 - **MANDATORY ZOD V3**: Always use `zod@3.25+` (pin to the same version the SDK internally uses, usually `^3.25.0`). Do not use `zod@4`. The MCP SDK includes a backward-compatibility layer for v4 that breaks native TypeScript generic inference (`AnySchema` vs `ZodTypeAny` mismatches). Using `zod@3` directly ensures flawless type extraction.
 - **Always `.describe()`**: Every single parameter must have a `.describe()` with clear intent and a natural-language example.
@@ -104,9 +113,9 @@ inputSchema: z.object({
     format: z.enum(['json', 'markdown', 'plain']).default('json')
         .describe('Output format. Use markdown when results will be shown to the user.'),
 }),
-outputSchema: z.object({
+outputSchema: {
     results: z.array(z.string()).describe('List of search result titles.')
-})
+}
 ```
 
 **Anti-Instruction-Drift**: **NEVER** provide JSON samples or literal code snippets in the main description. Trust the Zod schema for the *how*; use descriptions for the *why* and *when*.
