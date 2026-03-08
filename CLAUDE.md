@@ -85,8 +85,13 @@ The SDK has specific type expectations for different primitives. Mixing these wi
 | Primitive | Field | Requirement | Reason |
 |---|---|---|---|
 | **Tools** | `inputSchema` | `z.object({...})` | Required for argument validation and handler type inference. |
-| **Tools** | `outputSchema` | `{...}` (Raw Shape) | SDK expects a raw shape to wrap the structured output. |
+| **Tools** | `outputSchema` | `{...}` (Raw Shape) | **Advanced**: Defines machine-readable `structuredContent`. Helps agents plan follow-up steps. |
 | **Prompts** | `argsSchema` | `{...}` (Raw Shape) | SDK expects a raw shape to wrap the prompt arguments. |
+
+**When to use `outputSchema`**:
+- **90% of Tools**: Not needed. Standard `content` (text/image) is sufficient for most tasks.
+- **10% High-Impact Tools**: Use for search, analysis, or state-toggles where the agent needs to "pipe" data into another tool or make a logic-based decision based on a specific field (e.g., a `confidence` score or `status` flag).
+- **Agentic Planning**: It steers the agent's **post-call strategy** by explicitly defining the machine-readable contract of the result.
 
 **Rules**:
 - **MANDATORY ZOD V3**: Always use `zod@3.25+` (pin to the same version the SDK internally uses, usually `^3.25.0`). Do not use `zod@4`. The MCP SDK includes a backward-compatibility layer for v4 that breaks native TypeScript generic inference (`AnySchema` vs `ZodTypeAny` mismatches). Using `zod@3` directly ensures flawless type extraction.

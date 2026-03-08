@@ -62,6 +62,13 @@ inputSchema: z.object({
 outputSchema: {
     results: z.array(z.string()).describe('List of search result titles.')
 }
+
+### The 90/10 Rule for `outputSchema`
+In the 2026 landscape, `outputSchema` is a specialized orchestration tool.
+- **90% of Tools**: Do not need it. Standard `content` (text/image) is sufficient for most tasks.
+- **10% High-Impact Tools**: Use for search, analysis, or state-toggles where the agent needs to "pipe" data into another tool or make a logic-based decision based on a specific field (e.g., a `confidence` score or `status` flag).
+- **Agentic Planning**: While `inputSchema` steers the **call**, `outputSchema` steers the **post-call strategy** by explicitly defining the machine-readable contract of the result.
+
 ```
 
 **Why it matters**: The Zod schema is serialized into JSON Schema and sent to the agent alongside the description. A `z.enum()` tells the agent exactly what's valid. A `z.number().min(1).max(50)` prevents out-of-range values before they happen. Together with `.describe()`, the schema becomes a self-documenting, self-validating contract.
